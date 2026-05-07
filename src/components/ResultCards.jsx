@@ -116,21 +116,24 @@ function BookmarkButton({ selection, currentVisaStatus }) {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [state, setState] = useState("idle"); // idle | saving | saved | error
+  const [errMsg, setErrMsg] = useState("");
 
   async function handleSave(e) {
     e.preventDefault();
     if (!email) return;
     setState("saving");
-    const { error } = await supabase.from("subscriptions").upsert({
+    const { error } = await supabase.from("subscriptions").insert({
       email,
       passport: selection.passport,
       residence: selection.residence || "",
       destination: selection.destination,
       residence_status: selection.residenceStatus || "",
       last_visa_status: currentVisaStatus,
-    }, { onConflict: "email,passport,destination,residence" });
+    });
 
     if (error) {
+      console.error("Supabase error:", error);
+      setErrMsg(error.message || JSON.stringify(error));
       setState("error");
     } else {
       setState("saved");
@@ -156,7 +159,7 @@ function BookmarkButton({ selection, currentVisaStatus }) {
             {state === "saving" ? "Saving..." : "Notify me"}
           </button>
           <button type="button" className="bookmark-cancel" onClick={() => { setOpen(false); setState("idle"); }}>✕</button>
-          {state === "error" && <p className="bookmark-error">Something went wrong — try again.</p>}
+          {state === "error" && <p className="bookmark-error">{errMsg || "Something went wrong"}</p>}
         </form>
       )}
     </div>
