@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
 
-const SECTION_KEYS = ["VISA STATUS", "VISA TYPE", "PROCESSING TIME", "WHERE TO APPLY", "REQUIRED DOCUMENTS", "DISCLAIMER"];
+const SECTION_KEYS = ["VISA STATUS", "VISA DIFFICULTY", "VISA TYPE", "PROCESSING TIME", "WHERE TO APPLY", "REQUIRED DOCUMENTS", "DISCLAIMER"];
 
 const STATUS_EMOJI = { free: "✅", evisa: "🔵", arrival: "🟡", required: "❌", banned: "🚫", unknown: "🔍" };
 
@@ -59,6 +59,33 @@ function renderWithLinks(text) {
     /^https?:\/\//.test(part)
       ? <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="apply-link">{part}</a>
       : <span key={i}>{part}</span>
+  );
+}
+
+const DIFFICULTY_CONFIG = {
+  easy:      { label: "Easy",      color: "green" },
+  moderate:  { label: "Moderate",  color: "orange" },
+  hard:      { label: "Hard",      color: "red" },
+  "very hard": { label: "Very Hard", color: "black" },
+};
+
+function DifficultyBadge({ text }) {
+  const clean = strip(text);
+  const firstWord = clean.toLowerCase().split(/[—\-:,\n]/)[0].trim();
+  const config = DIFFICULTY_CONFIG[firstWord] || null;
+  if (!config) return null;
+  const detail = clean.includes("—") ? clean.split("—").slice(1).join("—").trim()
+               : clean.includes("-") ? clean.split("-").slice(1).join("-").trim()
+               : null;
+  return (
+    <div className="difficulty-row">
+      <span className="difficulty-label">Application difficulty</span>
+      <div className={`difficulty-badge difficulty-badge--${config.color}`}>
+        <span className="difficulty-dot" />
+        <span className="difficulty-text">{config.label}</span>
+      </div>
+      {detail && <p className="difficulty-detail">{detail}</p>}
+    </div>
   );
 }
 
@@ -201,6 +228,8 @@ export default function ResultCards({ result, selection, onReset }) {
           {parsed["VISA STATUS"] && <p className="verdict-detail">{strip(parsed["VISA STATUS"])}</p>}
         </div>
       </div>
+
+      {parsed["VISA DIFFICULTY"] && <DifficultyBadge text={parsed["VISA DIFFICULTY"]} />}
 
       <div className="info-row">
         {parsed["VISA TYPE"] && (

@@ -76,20 +76,22 @@ Possible VISA STATUS values (pick exactly one, use these exact phrases):
 - "Visa on Arrival" — visa issued at the border
 - "Visa Required" — must apply at an embassy/consulate in advance
 
-Possible VISA STATUS values (pick exactly one, use these exact phrases):
-- "Entry Banned" — passport holders are explicitly banned or prohibited from entering
-- "Visa-Free" — no visa needed, entry is free
-- "eVisa Available" — can apply online before travel
-- "Visa on Arrival" — visa issued at the border
-- "Visa Required" — must apply at an embassy/consulate in advance
+Possible VISA DIFFICULTY values (only include when a visa is actually required — i.e. status is eVisa Available, Visa on Arrival, or Visa Required):
+- "Easy" — simple online form, minimal documents, fast approval, high approval rate
+- "Moderate" — some documents required, straightforward process, reasonable wait time
+- "Hard" — many documents, embassy appointment required, longer processing, lower approval rate
+- "Very Hard" — strict requirements, high rejection risk, long wait, extensive documentation
 
 Format your response EXACTLY like this, with no text before the first header:
 
 **VISA STATUS**
-[One of the five status phrases above, followed by a brief explanation. If residence unlocks a privilege, state it — e.g. "eVisa Available — as a UK resident, you qualify even with a Sudanese passport."]
+[One of the five status phrases above, followed by a brief explanation. If residence unlocks a privilege, state it.]
+
+**VISA DIFFICULTY**
+[One of the four difficulty values above, followed by one sentence explaining why. Omit this section entirely if status is Visa-Free or Entry Banned.]
 
 **VISA TYPE**
-[Specific visa category, where to apply, approximate fee. Write N/A if entry is banned or no visa is needed.]
+[Specific visa category. Write N/A if entry is banned or no visa is needed.]
 
 **PROCESSING TIME**
 [Standard and express times. Write N/A if entry is banned or no visa is needed.]
@@ -97,11 +99,11 @@ Format your response EXACTLY like this, with no text before the first header:
 **REQUIRED DOCUMENTS**
 [ALWAYS fill this section — never leave it empty or skip it.
 - If entry is banned: write "Entry is not permitted — no documents will grant access."
-- If visa-free: list the documents still checked at the border (e.g. valid passport with X months remaining, return/onward ticket, proof of accommodation, proof of funds). These are required even without a visa.
+- If visa-free: list the documents still checked at the border (valid passport, return ticket, proof of funds, etc.).
 - If eVisa/visa on arrival/visa required: list all specific documents needed for the application.]
 
 **WHERE TO APPLY**
-[ALWAYS fill this section. Provide: (1) the official government website or online portal URL for the visa application if one exists, and (2) the embassy or consulate responsible for this passport in the residence country (name only, no specific city). If visa-free or entry is banned, state that clearly and explain why this section is N/A.]
+[ALWAYS fill this section. Provide: (1) the official government website or online portal URL if one exists, and (2) the responsible embassy or consulate name. If visa-free or entry is banned, state that clearly.]
 
 **DISCLAIMER**
 [One sentence: advise verifying with official government sources as rules change frequently.]`;
