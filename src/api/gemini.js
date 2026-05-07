@@ -82,13 +82,15 @@ Possible VISA DIFFICULTY values (only include when a visa is actually required �
 - "Hard" — many documents, embassy appointment required, longer processing, lower approval rate
 - "Very Hard" — strict requirements, high rejection risk, long wait, extensive documentation
 
+VISA DIFFICULTY is MANDATORY for any status other than Visa-Free. Always include it for eVisa Available, Visa on Arrival, and Visa Required.
+
 Format your response EXACTLY like this, with no text before the first header:
 
 **VISA STATUS**
 [One of the five status phrases above, followed by a brief explanation. If residence unlocks a privilege, state it.]
 
 **VISA DIFFICULTY**
-[One of the four difficulty values above, followed by one sentence explaining why. Omit this section entirely if status is Visa-Free or Entry Banned.]
+[One of the four difficulty values above, followed by one sentence explaining why. Omit this section ONLY if status is Visa-Free. Always include it for eVisa Available, Visa on Arrival, and Visa Required.]
 
 **VISA TYPE**
 [Specific visa category. Write N/A if entry is banned or no visa is needed.]
