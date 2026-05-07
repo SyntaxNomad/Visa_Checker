@@ -13,8 +13,8 @@ const supabase = createClient(
 );
 
 const GEMINI_KEY = process.env.GEMINI_API_KEY;
-const RESEND_KEY = process.env.RESEND_API_KEY;
-const FROM_EMAIL = process.env.FROM_EMAIL; // e.g. "VisaIneed <noreply@yourdomain.com>"
+const BREVO_KEY = process.env.BREVO_API_KEY;
+const FROM_EMAIL = process.env.FROM_EMAIL; // the email you signed up to Brevo with
 
 async function callGemini(passport, residence, destination, residenceStatus) {
   const residenceLine = residence
@@ -42,10 +42,15 @@ async function callGemini(passport, residence, destination, residenceStatus) {
 }
 
 async function sendEmail(to, subject, html) {
-  await fetch("https://api.resend.com/emails", {
+  await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_KEY}` },
-    body: JSON.stringify({ from: FROM_EMAIL, to, subject, html }),
+    headers: { "Content-Type": "application/json", "api-key": BREVO_KEY },
+    body: JSON.stringify({
+      sender: { name: "VisaIneed", email: FROM_EMAIL },
+      to: [{ email: to }],
+      subject,
+      htmlContent: html,
+    }),
   });
 }
 
