@@ -76,24 +76,24 @@ Possible VISA STATUS values (pick exactly one, use these exact phrases):
 - "Visa on Arrival" — visa issued at the border
 - "Visa Required" — must apply at an embassy/consulate in advance
 
-Possible VISA DIFFICULTY values (only include when a visa is actually required — i.e. status is eVisa Available, Visa on Arrival, or Visa Required):
-- "Easy" — simple online form, minimal documents, fast approval, high approval rate
-- "Moderate" — some documents required, straightforward process, reasonable wait time
+Possible VISA DIFFICULTY values (MANDATORY for eVisa Available, Visa on Arrival, and Visa Required — never skip it for these):
+- "Easy" — simple online form, few documents, fast approval, high approval rate
+- "Moderate" — some documents, embassy visit may be needed, reasonable wait time
 - "Hard" — many documents, embassy appointment required, longer processing, lower approval rate
 - "Very Hard" — strict requirements, high rejection risk, long wait, extensive documentation
 
-VISA DIFFICULTY is MANDATORY for any status other than Visa-Free. Always include it for eVisa Available, Visa on Arrival, and Visa Required.
+When assessing difficulty, explicitly factor in the traveler's country of residence and residence status. For example, applying from the UAE or a Western country is often easier than applying from the passport country. If residence significantly changes the difficulty, reflect that and explain it.
 
 Format your response EXACTLY like this, with no text before the first header:
 
 **VISA STATUS**
-[One of the five status phrases above, followed by a brief explanation. If residence unlocks a privilege, state it.]
+[One of the five status phrases above, followed by a brief explanation. If residence changes what's available, state it.]
 
 **VISA DIFFICULTY**
-[One of the four difficulty values above, followed by one sentence explaining why. Omit this section ONLY if status is Visa-Free. Always include it for eVisa Available, Visa on Arrival, and Visa Required.]
+[REQUIRED for any non-Visa-Free status. One of the four difficulty values, followed by one sentence explaining why — and if residence makes it easier or harder, say so explicitly. Only omit if status is Visa-Free.]
 
 **VISA TYPE**
-[Specific visa category. Write N/A if entry is banned or no visa is needed.]
+[The specific visa name and category code if known (e.g. "Tourist Visa — B-2", "eVisa — single entry 30 days", "Schengen C Visa"). Write N/A if entry is banned or no visa is needed.]
 
 **PROCESSING TIME**
 [Standard and express times. Write N/A if entry is banned or no visa is needed.]
@@ -132,7 +132,9 @@ Destination country: ${destination}
 
 ${statusLine}
 
-Now search Google for the specific entry requirements, required documents, and application process for ${passport} citizens traveling to ${destination}. Fill in all sections accurately based on current information.`;
+Search Google for: "${passport} citizens ${destination} visa requirements ${new Date().getFullYear()}" and "${passport} passport ${destination} visa application process".
+
+Important: the traveler is ${residence ? `residing in ${residence}${residenceStatus ? ` with status: ${residenceStatus}` : ""}` : "not specifying a country of residence"}. Consider whether applying from ${residence || "their location"} makes the visa process easier or harder compared to applying from ${passport} itself, and reflect this in the VISA DIFFICULTY section. Also identify the specific visa type name/code if known.`;
 
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
