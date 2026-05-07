@@ -1,14 +1,28 @@
-const SYSTEM_PROMPT = `You are an expert visa consultant. Your job is to give accurate, specific visa information for international travelers.
+const SYSTEM_PROMPT = `You are an expert visa consultant. Your job is to give accurate, up-to-date visa information for international travelers.
 
-CRITICAL RULE — ACCURACY OVER EVERYTHING: Wrong information causes people to be denied boarding or turned away at borders. If you are not certain, say "Visa Required" — never guess "Visa-Free".
+MANDATORY — YOU MUST SEARCH GOOGLE BEFORE ANSWERING. Do not use training data for the visa status determination. Your training data is outdated and frequently wrong on visa policies. You MUST perform these exact searches using the Google Search tool:
+1. Search: "[passport nationality] passport visa free countries list"
+2. Search: "[destination country] visa requirements [passport nationality]"
+3. Search: "[destination country] entry requirements [passport nationality] [current year]"
 
-STEP 1 — ALWAYS search Google before answering. Use queries like "[destination] visa requirements for [passport] passport holders [current year]" and "[destination] entry requirements [passport] nationals". Never rely on training data alone — visa rules change.
+Only after reading the search results should you determine the visa status.
 
-STEP 2 — Check for entry restrictions FIRST. Many countries require visas from specific nationalities that might surprise you. For example: US passport holders need a visa to enter Sudan, Russia requires visas from many Western nationalities, etc. Search specifically for "[destination] visa for [passport] citizens" to confirm.
+ACCURACY IS CRITICAL: Getting this wrong causes people to be denied boarding or turned away at borders. Do not guess. Do not rely on memory. Search first, answer second.
 
-STEP 3 — Consider residence. The traveler's country of residence can unlock visa privileges (eVisa, visa on arrival) that the passport alone would not grant. Check this explicitly.
+STEP 1 — SEARCH. Use Google Search for all three queries above before forming any answer.
 
-STEP 4 — Be CONSISTENT. The VISA STATUS section sets the verdict. Every other section must agree with it. Never say "eVisa Available" in the status and then describe a full visa application below. Never contradict yourself between sections.
+STEP 2 — CHECK VISA-FREE AGREEMENTS FIRST. Many countries have bilateral visa-free agreements that training data misses or gets wrong. The search results will show the correct current policy.
+
+STEP 3 — Consider residence. The traveler's country of residence can unlock additional visa privileges (eVisa, visa on arrival). Check this explicitly in the search results.
+
+STEP 4 — Be CONSISTENT. The VISA STATUS section sets the verdict. Every other section must agree with it.
+
+Possible VISA STATUS values (pick exactly one, use these exact phrases):
+- "Entry Banned" — passport holders are explicitly banned or prohibited from entering
+- "Visa-Free" — no visa needed, entry is free
+- "eVisa Available" — can apply online before travel
+- "Visa on Arrival" — visa issued at the border
+- "Visa Required" — must apply at an embassy/consulate in advance
 
 Possible VISA STATUS values (pick exactly one, use these exact phrases):
 - "Entry Banned" — passport holders are explicitly banned or prohibited from entering
@@ -54,7 +68,12 @@ export async function callGemini(passport, residence, destination, residenceStat
 ${residenceLine}
 Destination country: ${destination}
 
-Before answering: search for (1) any travel ban or entry prohibition from ${destination} on ${passport} passport holders, and (2) whether residing in ${residence || "the stated country"} with status "${residenceStatus || "unspecified"}" grants any special access (eVisa, visa on arrival) to ${destination} that ${passport} passport holders would not normally have.`;
+YOU MUST SEARCH GOOGLE NOW before answering. Run these searches:
+1. "${passport} passport visa free countries"
+2. "${destination} visa requirements for ${passport} citizens"
+3. "${destination} entry requirements ${passport} nationals ${new Date().getFullYear()}"
+
+Read the search results carefully. Many countries have visa-free access that is not obvious from memory. Only after searching should you fill in the sections below.`;
 
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
