@@ -29,6 +29,7 @@ function mapRequirement(req) {
 }
 
 async function lookupPassportIndex(passport, destination) {
+  if (passport === destination) return null; // same country — no visa needed, skip lookup
   try {
     const map = await fetchPassportIndex();
     // Try exact match first, then common name variants
@@ -60,14 +61,13 @@ async function lookupPassportIndex(passport, destination) {
 
 const SYSTEM_PROMPT = `You are an expert visa consultant. Your job is to give accurate, up-to-date visa information for international travelers.
 
-You MUST use Google Search to determine the correct visa status. A dataset hint will be provided but it can contain errors — always trust your Google Search results over the hint.
+The VISA STATUS has been verified from a trusted dataset. Use it exactly — it is more reliable than your training data.
 
-STEP 1 — Search Google for "[passport] citizens [destination] visa requirements" and "[destination] visa policy [passport] nationals". Base your answer on what the search results say.
-STEP 2 — Use your search findings as the authoritative source. The dataset hint is only a rough guide — override it freely if search shows something different.
-STEP 3 — "Entry Banned" only if search confirms ALL entry is completely prohibited with no visa of any kind available. Partial restrictions or specific visa difficulties are NOT a ban.
-STEP 4 — Search for documents, application process, and where to apply.
-STEP 5 — Consider residence and whether it changes the process.
-STEP 6 — Be CONSISTENT across all sections.
+STEP 1 — Accept the verified VISA STATUS. Do not second-guess it.
+STEP 2 — The only exception: search Google for "[passport] banned from [destination]" — if results confirm a COMPLETE entry ban (no visa of any kind issued), use "Entry Banned" instead. Partial restrictions or advisories are NOT a ban.
+STEP 3 — Search Google for the specific documents, application process, and where to apply for this passport/destination pair.
+STEP 4 — Consider residence and whether it changes the application process or options available.
+STEP 5 — Be CONSISTENT. Every section must agree with the final VISA STATUS.
 
 Possible VISA STATUS values (pick exactly one, use these exact phrases):
 - "Entry Banned" — passport holders are explicitly banned or prohibited from entering
@@ -119,8 +119,8 @@ export async function callGemini(passport, residence, destination, residenceStat
     : "Country of residence: Not specified";
 
   const statusLine = verifiedStatus
-    ? `Dataset hint (may be wrong — verify with Google): ${verifiedStatus}`
-    : `Dataset hint: not available — determine status from Google Search.`;
+    ? `VERIFIED VISA STATUS (use this exactly): ${verifiedStatus}`
+    : `VISA STATUS: not in dataset — search Google to determine the correct status.`;
 
   const userMessage = `Passport country: ${passport}
 ${residenceLine}
@@ -128,7 +128,7 @@ Destination country: ${destination}
 
 ${statusLine}
 
-Search Google now for the actual current visa requirements for ${passport} citizens traveling to ${destination}. Use the search results as your primary source — override the dataset hint if needed.`;
+Search Google for the documents, application steps, and where to apply for ${passport} citizens traveling to ${destination}. Also check if there is a complete entry ban — if yes, override the status with "Entry Banned".`;
 
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
