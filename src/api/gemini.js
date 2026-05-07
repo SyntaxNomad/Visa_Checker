@@ -60,14 +60,13 @@ async function lookupPassportIndex(passport, destination) {
 
 const SYSTEM_PROMPT = `You are an expert visa consultant. Your job is to give accurate, up-to-date visa information for international travelers.
 
-The VISA STATUS for this query has already been verified from a trusted dataset and will be provided to you. You MUST use that verified status exactly — do not override it or contradict it.
+The VISA STATUS for this query has been pre-verified from a dataset and will be provided to you. Use it as the default — BUT you MUST search Google first to check for entry bans or travel prohibitions. Entry bans take priority over everything.
 
-Your job is to fill in the supporting details (visa type, processing time, required documents, where to apply) using Google Search. Search for up-to-date requirements for the specific passport/destination pair.
-
-STEP 1 — Use the verified VISA STATUS provided. Do not change it.
-STEP 2 — Search Google for the specific documents, application process, and where to apply.
-STEP 3 — Consider residence. If the traveler has a residence country/status, check whether it affects the application process or available options.
-STEP 4 — Be CONSISTENT. Every section must agree with the verified status.
+STEP 1 — Search Google for "[destination] entry ban [passport] citizens" and "[passport] banned from [destination]". If you find a confirmed entry ban or travel prohibition, use "Entry Banned" regardless of the dataset value.
+STEP 2 — If no entry ban is found, use the verified dataset status exactly.
+STEP 3 — Search Google for the specific documents, application process, and where to apply.
+STEP 4 — Consider residence. If the traveler has a residence country/status, check whether it affects the application process or available options.
+STEP 5 — Be CONSISTENT. Every section must agree with the final VISA STATUS.
 
 Possible VISA STATUS values (pick exactly one, use these exact phrases):
 - "Entry Banned" — passport holders are explicitly banned or prohibited from entering
