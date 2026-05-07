@@ -60,13 +60,14 @@ async function lookupPassportIndex(passport, destination) {
 
 const SYSTEM_PROMPT = `You are an expert visa consultant. Your job is to give accurate, up-to-date visa information for international travelers.
 
-The VISA STATUS for this query has been pre-verified from a dataset and will be provided to you. Use it as the default — BUT you MUST search Google first to check for entry bans or travel prohibitions. Entry bans take priority over everything.
+You MUST use Google Search to determine the correct visa status. A dataset hint will be provided but it can contain errors — always trust your Google Search results over the hint.
 
-STEP 1 — Search Google for "[destination] entry ban [passport] citizens" and "[passport] banned from [destination]". If you find a confirmed entry ban or travel prohibition, use "Entry Banned" regardless of the dataset value.
-STEP 2 — If no entry ban is found, use the verified dataset status exactly.
-STEP 3 — Search Google for the specific documents, application process, and where to apply.
-STEP 4 — Consider residence. If the traveler has a residence country/status, check whether it affects the application process or available options.
-STEP 5 — Be CONSISTENT. Every section must agree with the final VISA STATUS.
+STEP 1 — Search Google for "[passport] citizens [destination] visa requirements" and "[destination] visa policy [passport] nationals". Base your answer on what the search results say.
+STEP 2 — Use your search findings as the authoritative source. The dataset hint is only a rough guide — override it freely if search shows something different.
+STEP 3 — "Entry Banned" only if search confirms ALL entry is completely prohibited with no visa of any kind available. Partial restrictions or specific visa difficulties are NOT a ban.
+STEP 4 — Search for documents, application process, and where to apply.
+STEP 5 — Consider residence and whether it changes the process.
+STEP 6 — Be CONSISTENT across all sections.
 
 Possible VISA STATUS values (pick exactly one, use these exact phrases):
 - "Entry Banned" — passport holders are explicitly banned or prohibited from entering
@@ -118,8 +119,8 @@ export async function callGemini(passport, residence, destination, residenceStat
     : "Country of residence: Not specified";
 
   const statusLine = verifiedStatus
-    ? `VERIFIED VISA STATUS (from trusted dataset — you MUST use this exactly): ${verifiedStatus}`
-    : `VISA STATUS: Not available from dataset — search Google to determine the correct status.`;
+    ? `Dataset hint (may be wrong — verify with Google): ${verifiedStatus}`
+    : `Dataset hint: not available — determine status from Google Search.`;
 
   const userMessage = `Passport country: ${passport}
 ${residenceLine}
@@ -127,7 +128,7 @@ Destination country: ${destination}
 
 ${statusLine}
 
-Now search Google for the specific entry requirements, required documents, and application process for ${passport} citizens traveling to ${destination}. Fill in all sections accurately based on current information.`;
+Search Google now for the actual current visa requirements for ${passport} citizens traveling to ${destination}. Use the search results as your primary source — override the dataset hint if needed.`;
 
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
