@@ -76,24 +76,20 @@ Possible VISA STATUS values (pick exactly one, use these exact phrases):
 - "Visa on Arrival" — visa issued at the border
 - "Visa Required" — must apply at an embassy/consulate in advance
 
-Possible VISA DIFFICULTY values (MANDATORY for eVisa Available, Visa on Arrival, and Visa Required — never skip it for these):
-- "Easy" — simple online form, few documents, fast approval, high approval rate
-- "Moderate" — some documents, embassy visit may be needed, reasonable wait time
-- "Hard" — many documents, embassy appointment required, longer processing, lower approval rate
-- "Very Hard" — strict requirements, high rejection risk, long wait, extensive documentation
-
-When assessing difficulty, explicitly factor in the traveler's country of residence and residence status. For example, applying from the UAE or a Western country is often easier than applying from the passport country. If residence significantly changes the difficulty, reflect that and explain it.
+Possible VISA STATUS values (pick exactly one, use these exact phrases):
+- "Entry Banned" — passport holders are explicitly banned or prohibited from entering
+- "Visa-Free" — no visa needed, entry is free
+- "eVisa Available" — can apply online before travel
+- "Visa on Arrival" — visa issued at the border
+- "Visa Required" — must apply at an embassy/consulate in advance
 
 Format your response EXACTLY like this, with no text before the first header:
 
 **VISA STATUS**
-[One of the five status phrases above, followed by a brief explanation. If residence changes what's available, state it.]
-
-**VISA DIFFICULTY**
-[REQUIRED for any non-Visa-Free status. One of the four difficulty values, followed by one sentence explaining why — and if residence makes it easier or harder, say so explicitly. Only omit if status is Visa-Free.]
+[One of the five status phrases above, followed by a brief explanation. If residence unlocks a privilege, state it — e.g. "eVisa Available — as a UK resident, you qualify even with a Sudanese passport."]
 
 **VISA TYPE**
-[The specific visa name and category code if known (e.g. "Tourist Visa — B-2", "eVisa — single entry 30 days", "Schengen C Visa"). Write N/A if entry is banned or no visa is needed.]
+[Specific visa category, where to apply, approximate fee. Write N/A if entry is banned or no visa is needed.]
 
 **PROCESSING TIME**
 [Standard and express times. Write N/A if entry is banned or no visa is needed.]
@@ -101,11 +97,11 @@ Format your response EXACTLY like this, with no text before the first header:
 **REQUIRED DOCUMENTS**
 [ALWAYS fill this section — never leave it empty or skip it.
 - If entry is banned: write "Entry is not permitted — no documents will grant access."
-- If visa-free: list the documents still checked at the border (valid passport, return ticket, proof of funds, etc.).
+- If visa-free: list the documents still checked at the border (e.g. valid passport with X months remaining, return/onward ticket, proof of accommodation, proof of funds). These are required even without a visa.
 - If eVisa/visa on arrival/visa required: list all specific documents needed for the application.]
 
 **WHERE TO APPLY**
-[ALWAYS fill this section. Provide: (1) the official government website or online portal URL if one exists, and (2) the responsible embassy or consulate name. If visa-free or entry is banned, state that clearly.]
+[ALWAYS fill this section. Provide: (1) the official government website or online portal URL for the visa application if one exists, and (2) the embassy or consulate responsible for this passport in the residence country (name only, no specific city). If visa-free or entry is banned, state that clearly and explain why this section is N/A.]
 
 **DISCLAIMER**
 [One sentence: advise verifying with official government sources as rules change frequently.]`;
@@ -132,9 +128,7 @@ Destination country: ${destination}
 
 ${statusLine}
 
-Search Google for: "${passport} citizens ${destination} visa requirements ${new Date().getFullYear()}" and "${passport} passport ${destination} visa application process".
-
-Important: the traveler is ${residence ? `residing in ${residence}${residenceStatus ? ` with status: ${residenceStatus}` : ""}` : "not specifying a country of residence"}. Consider whether applying from ${residence || "their location"} makes the visa process easier or harder compared to applying from ${passport} itself, and reflect this in the VISA DIFFICULTY section. Also identify the specific visa type name/code if known.`;
+Now search Google for the specific entry requirements, required documents, and application process for ${passport} citizens traveling to ${destination}. Fill in all sections accurately based on current information.`;
 
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
