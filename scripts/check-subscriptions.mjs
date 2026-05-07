@@ -92,7 +92,10 @@ async function run() {
       const newStatus = await callGemini(sub.passport, sub.residence, sub.destination, sub.residence_status);
       if (!newStatus) { console.log(`  [SKIP] No result for ${sub.email} — ${sub.passport}→${sub.destination}`); continue; }
 
-      const changed = sub.last_visa_status && sub.last_visa_status !== newStatus;
+      // Normalize old type-code values (e.g. "evisa") to full phrases so they don't falsely trigger
+      const LEGACY_MAP = { free: "Visa-Free", evisa: "eVisa Available", arrival: "Visa on Arrival", required: "Visa Required", banned: "Entry Banned" };
+      const storedStatus = LEGACY_MAP[sub.last_visa_status] ?? sub.last_visa_status;
+      const changed = storedStatus && storedStatus !== newStatus;
 
       if (changed) {
         console.log(`  [CHANGED] ${sub.passport}→${sub.destination}: "${sub.last_visa_status}" → "${newStatus}" — emailing ${sub.email}`);

@@ -235,7 +235,7 @@ export default function ResultCards({ result, selection, onReset }) {
 
       <div className="actions-row">
         <ShareButton selection={selection} statusConfig={statusConfig} parsed={parsed} />
-        <BookmarkButton selection={selection} currentVisaStatus={statusConfig.type} />
+        <BookmarkButton selection={selection} currentVisaStatus={statusConfig.label} />
       </div>
 
       <div className="results-footer">
