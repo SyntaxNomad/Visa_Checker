@@ -54,7 +54,17 @@ async function sendEmail(to, subject, html) {
   });
 }
 
-function changeEmail({ email, passport, residence, destination, oldStatus, newStatus }) {
+function escapeHtml(s) {
+  return String(s)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function changeEmail({ passport, residence, destination, oldStatus, newStatus }) {
+  [passport, residence, destination, oldStatus, newStatus] =
+    [passport, residence, destination, oldStatus, newStatus].map((v) => escapeHtml(v ?? ""));
   const route = residence ? `${passport} → ${destination} (residing in ${residence})` : `${passport} → ${destination}`;
   return `
     <div style="font-family:system-ui,sans-serif;max-width:540px;margin:0 auto;padding:24px;color:#1e293b">
@@ -80,10 +90,11 @@ function changeEmail({ email, passport, residence, destination, oldStatus, newSt
 async function run() {
   const { data: subs, error } = await supabase
     .from("subscriptions")
-    .select("*");
+    .select("*")
+    .eq("confirmed", true); // double opt-in: only alert addresses that clicked the confirmation link
 
   if (error) { console.error("Failed to load subscriptions:", error); process.exit(1); }
-  if (!subs.length) { console.log("No subscriptions."); return; }
+  if (!subs.length) { console.log("No confirmed subscriptions."); return; }
 
   console.log(`Checking ${subs.length} subscription(s)...`);
 

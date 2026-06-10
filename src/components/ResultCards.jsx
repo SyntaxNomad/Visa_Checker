@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { supabase } from "../lib/supabase";
 
 const SECTION_KEYS = ["VISA STATUS", "VISA TYPE", "PROCESSING TIME", "WHERE TO APPLY", "REQUIRED DOCUMENTS", "DISCLAIMER"];
 
@@ -92,7 +91,7 @@ function ShareButton({ selection, statusConfig, parsed }) {
     const text = lines.join("\n");
 
     if (navigator.share) {
-      try { await navigator.share({ title: "VisaIneed", text }); } catch {}
+      try { await navigator.share({ title: "VisaIneed", text }); } catch { /* user cancelled the share sheet */ }
     } else {
       await navigator.clipboard.writeText(text);
       setCopied(true);
@@ -122,26 +121,37 @@ function BookmarkButton({ selection, currentVisaStatus }) {
     e.preventDefault();
     if (!email) return;
     setState("saving");
-    const { error } = await supabase.from("subscriptions").insert({
-      email,
-      passport: selection.passport,
-      residence: selection.residence || "",
-      destination: selection.destination,
-      residence_status: selection.residenceStatus || "",
-      last_visa_status: currentVisaStatus,
-    });
-
-    if (error) {
-      console.error("Supabase error:", error);
-      setErrMsg(error.message || JSON.stringify(error));
+    try {
+      const res = await fetch("/api/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          passport: selection.passport,
+          residence: selection.residence || "",
+          destination: selection.destination,
+          residenceStatus: selection.residenceStatus || "",
+          currentVisaStatus,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setErrMsg(data?.error || "Something went wrong");
+        setState("error");
+      } else {
+        setState(data.status === "already_subscribed" ? "already" : "saved");
+      }
+    } catch {
+      setErrMsg("Network error — please try again.");
       setState("error");
-    } else {
-      setState("saved");
     }
   }
 
   if (state === "saved") {
-    return <p className="bookmark-saved">🔔 Done — you'll get an email if visa rules change for this route.</p>;
+    return <p className="bookmark-saved">📬 Almost done — check your inbox and click the confirmation link to activate alerts.</p>;
+  }
+  if (state === "already") {
+    return <p className="bookmark-saved">🔔 You're already subscribed to alerts for this route.</p>;
   }
 
   return (
