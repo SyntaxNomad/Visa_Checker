@@ -16,7 +16,28 @@ Instant visa requirement checker for any passport and destination. Built with Re
 - **AI** — Gemini 2.5 Flash with Google Search grounding for up-to-date results
 - **Database** — Supabase (PostgreSQL) for email subscriptions, accessed only via the service-role key in serverless functions and the GitHub Action (RLS locked down, no anon access)
 - **Email** — Brevo transactional email API, with double opt-in confirmation before any alerts are sent
-- **Automation** — GitHub Actions cron job runs daily at 8am UTC, re-checks every confirmed subscribed route and emails users if the visa status changed
+- **Automation** — GitHub Actions cron job runs daily at 8am UTC and runs the change-detection pipeline below
+
+## How change detection works (no false alerts)
+
+Visa statuses from an LLM reading live search results vary day to day even when
+policy hasn't changed, so alerts are **never** triggered by a single model
+reading. The daily job (`scripts/check-subscriptions.mjs`):
+
+1. **Detect** — each unique passport→destination route is checked once
+   (not once per subscriber). The Passport Index dataset is the primary,
+   deterministic detector; Gemini with Google Search grounding (3 samples,
+   majority vote) is the fallback only for routes the dataset doesn't cover.
+2. **Debounce** — a status that differs from the confirmed one becomes a
+   *candidate* and must hold for 2 consecutive daily runs.
+3. **Confirm** — dataset-detected changes additionally need Gemini's grounded
+   majority to agree (after 4 days the dataset wins regardless, as the
+   authoritative source).
+4. **Alert** — only then are subscribers emailed; the change is recorded in
+   `route_status_history` and the route's `confirmed_status` is updated.
+
+State lives in the `route_status` table (confirmed status, pending candidate,
+candidate streak) created by `supabase/migrations/2026-06-10-phase1-route-status.sql`.
 
 ## Local setup
 
