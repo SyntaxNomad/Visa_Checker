@@ -35,8 +35,8 @@ export default function CheckerForm({ onCheck, recentRoutes }) {
   return (
     <div className="form-container">
       <div className="form-card">
-        <h2 className="form-title">Check Visa Requirements</h2>
-        <p className="form-subtitle">Instant visa requirements for any passport</p>
+        <h2 className="form-title">Where to next?</h2>
+        <p className="form-subtitle">Takes about ten seconds — no signup needed</p>
         <form onSubmit={handleSubmit} className="form">
 
           <div className="field">
