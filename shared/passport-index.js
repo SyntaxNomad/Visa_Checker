@@ -44,7 +44,7 @@ export function mapRequirement(req) {
 }
 
 // Common name variants between our country list and the dataset
-function variants(name) {
+export function variants(name) {
   return [
     name,
     name.replace("United States", "United States of America"),
@@ -58,6 +58,22 @@ function variants(name) {
     name.replace("Tanzania", "Tanzania, United Republic of"),
     name.replace("Bolivia", "Bolivia, Plurinational State of"),
     name.replace("Venezuela", "Venezuela, Bolivarian Republic of"),
+    name.replace("Korea (South)", "South Korea"),
+    name.replace("South Korea", "Korea (South)"),
+    name.replace("Korea (North)", "North Korea"),
+    name.replace("North Korea", "Korea (North)"),
+    name.replace("Congo (Democratic Republic)", "DR Congo"),
+    name.replace("DR Congo", "Congo (Democratic Republic)"),
+    name.replace("Eswatini", "Swaziland"),
+    name.replace("Swaziland", "Eswatini"),
+    name.replace("Cabo Verde", "Cape Verde"),
+    name.replace("Cape Verde", "Cabo Verde"),
+    name.replace("Vatican City", "Vatican"),
+    name.replace("Vatican", "Vatican City"),
+    name.replace("Côte d'Ivoire", "Ivory Coast"),
+    name.replace("Ivory Coast", "Côte d'Ivoire"),
+    name.replace("Czech Republic", "Czechia"),
+    name.replace("Czechia", "Czech Republic"),
   ];
 }
 

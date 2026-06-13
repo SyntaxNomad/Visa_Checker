@@ -16,18 +16,24 @@ const STEPS = [
   },
 ];
 
+import { Reveal, TiltCard } from "./motion";
+
 export default function HowItWorks() {
   return (
     <section className="section" id="how-it-works">
-      <p className="section-eyebrow">How it works</p>
-      <h2 className="section-heading">Three steps to certainty</h2>
+      <Reveal>
+        <p className="section-eyebrow">How it works</p>
+        <h2 className="section-heading">Three steps to certainty</h2>
+      </Reveal>
       <div className="steps-grid">
-        {STEPS.map((s) => (
-          <div className="step-card" key={s.n}>
-            <div className="step-number">{s.n}</div>
-            <h3 className="step-title">{s.title}</h3>
-            <p className="step-body">{s.body}</p>
-          </div>
+        {STEPS.map((s, i) => (
+          <Reveal key={s.n} delay={i * 120}>
+            <TiltCard className="step-card">
+              <div className="step-number">{s.n}</div>
+              <h3 className="step-title">{s.title}</h3>
+              <p className="step-body">{s.body}</p>
+            </TiltCard>
+          </Reveal>
         ))}
       </div>
     </section>

@@ -21,17 +21,23 @@ const FAQS = [
   },
 ];
 
+import { Reveal } from "./motion";
+
 export default function FAQSection() {
   return (
     <section className="section" id="faq">
-      <p className="section-eyebrow">FAQ</p>
-      <h2 className="section-heading">Questions, answered</h2>
+      <Reveal>
+        <p className="section-eyebrow">FAQ</p>
+        <h2 className="section-heading">Questions, answered</h2>
+      </Reveal>
       <div className="faq-list">
-        {FAQS.map((f) => (
-          <details className="faq-item" key={f.q}>
-            <summary className="faq-q">{f.q}</summary>
-            <p className="faq-a">{f.a}</p>
-          </details>
+        {FAQS.map((f, i) => (
+          <Reveal key={f.q} delay={i * 70}>
+            <details className="faq-item">
+              <summary className="faq-q">{f.q}</summary>
+              <p className="faq-a">{f.a}</p>
+            </details>
+          </Reveal>
         ))}
       </div>
     </section>

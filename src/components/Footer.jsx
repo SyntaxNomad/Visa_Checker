@@ -3,7 +3,7 @@ export default function Footer() {
     <footer className="footer">
       <div className="footer-inner">
         <div className="footer-brand">
-          <span className="footer-logo">✈ Visa<span className="footer-logo-accent">Ineed</span></span>
+          <span className="footer-logo">Visa<span className="footer-logo-accent">Ineed</span></span>
           <p className="footer-blurb">
             Instant, verified visa requirements for any passport and destination —
             with alerts that only fire when the rules really change.

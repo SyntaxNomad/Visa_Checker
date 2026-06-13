@@ -1,58 +1,19 @@
 import { useState } from "react";
-
-const SECTION_KEYS = ["VISA STATUS", "VISA TYPE", "PROCESSING TIME", "WHERE TO APPLY", "REQUIRED DOCUMENTS", "DISCLAIMER"];
-
-const STATUS_EMOJI = { free: "✅", evisa: "🔵", arrival: "🟡", required: "❌", banned: "🚫", unknown: "🔍" };
-
-function parseResult(text) {
-  const parsed = {};
-  const parts = text.split(/\*\*\s*([A-Z][A-Z\s]{2,}?)\s*\*\*\s*:?\s*/);
-  for (let i = 1; i < parts.length - 1; i += 2) {
-    const key = parts[i].trim().toUpperCase();
-    const content = (parts[i + 1] || "").trim();
-    if (SECTION_KEYS.includes(key)) {
-      parsed[key] = content || null;
-    }
-  }
-  return parsed;
-}
-
-function getStatusConfig(text) {
-  if (!text) return { type: "unknown", label: "Check Details", color: "gray" };
-  const lower = text.toLowerCase();
-  const firstLine = lower.split("\n")[0];
-  if (firstLine.includes("entry banned") || firstLine.includes("banned") || firstLine.includes("prohibited") || firstLine.includes("not permitted")) {
-    return { type: "banned", label: "Entry Banned", color: "black" };
-  }
-  if (firstLine.includes("visa-free") || firstLine.includes("visa free") || firstLine.includes("no visa")) {
-    return { type: "free", label: "Visa-Free", color: "green" };
-  }
-  if (firstLine.includes("evisa available") || firstLine.includes("e-visa available")) {
-    return { type: "evisa", label: "eVisa Available", color: "blue" };
-  }
-  if (firstLine.includes("visa on arrival")) {
-    return { type: "arrival", label: "Visa on Arrival", color: "orange" };
-  }
-  if (firstLine.includes("visa required") || firstLine.includes("required")) {
-    return { type: "required", label: "Visa Required", color: "red" };
-  }
-  return { type: "unknown", label: "Check Details", color: "gray" };
-}
-
-function strip(text) {
-  return text.replace(/\*\*/g, "").replace(/\*/g, "").trim();
-}
-
-function renderLines(text) {
-  if (!text) return null;
-  return text.split("\n")
-    .map((line) => strip(line).replace(/^\d+\.\s*/, "").replace(/^[-•]\s*/, "").trim())
-    .filter(Boolean)
-    .map((line, i) => <li key={i}>{line}</li>);
-}
+import Icon from "./Icon";
+import ReadinessChecklist from "./ReadinessChecklist";
+import {
+  STATUS_META,
+  parseResult,
+  getStatusConfig,
+  stripMd,
+  parseLines,
+  flag,
+  timeAgo,
+  SECTION_KEYS,
+} from "../lib/status";
 
 function renderWithLinks(text) {
-  const clean = strip(text);
+  const clean = stripMd(text);
   const parts = clean.split(/(https?:\/\/[^\s,)\]]+)/g);
   return parts.map((part, i) =>
     /^https?:\/\//.test(part)
@@ -65,8 +26,8 @@ function ShareButton({ selection, statusConfig, parsed }) {
   const [copied, setCopied] = useState(false);
 
   async function handleShare() {
-    const emoji = STATUS_EMOJI[statusConfig.type] || "🔍";
-    const statusDetail = strip((parsed["VISA STATUS"] || statusConfig.label).split("\n")[0]);
+    const emoji = STATUS_META[statusConfig.label]?.emoji || "🔍";
+    const statusDetail = stripMd((parsed["VISA STATUS"] || statusConfig.label).split("\n")[0]);
     const residencePart = selection.residence ? ` (${selection.residence} resident)` : "";
 
     const lines = [
@@ -75,16 +36,10 @@ function ShareButton({ selection, statusConfig, parsed }) {
       `${emoji} ${statusDetail}`,
     ];
 
-    const docs = parsed["REQUIRED DOCUMENTS"];
-    if (docs) {
-      const topItems = docs.split("\n")
-        .map((l) => strip(l).replace(/^\d+\.\s*/, "").replace(/^[-•]\s*/, "").trim())
-        .filter(Boolean)
-        .slice(0, 3);
-      if (topItems.length) {
-        lines.push("", "Documents needed:");
-        topItems.forEach((d) => lines.push(`• ${d}`));
-      }
+    const topItems = parseLines(parsed["REQUIRED DOCUMENTS"]).slice(0, 3);
+    if (topItems.length) {
+      lines.push("", "Documents needed:");
+      topItems.forEach((d) => lines.push(`• ${d}`));
     }
 
     lines.push("", "visaneed.app");
@@ -114,7 +69,7 @@ function ShareButton({ selection, statusConfig, parsed }) {
 function BookmarkButton({ selection, currentVisaStatus }) {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
-  const [state, setState] = useState("idle"); // idle | saving | saved | error
+  const [state, setState] = useState("idle"); // idle | saving | saved | already | error
   const [errMsg, setErrMsg] = useState("");
 
   async function handleSave(e) {
@@ -148,10 +103,10 @@ function BookmarkButton({ selection, currentVisaStatus }) {
   }
 
   if (state === "saved") {
-    return <p className="bookmark-saved">📬 Almost done — check your inbox and click the confirmation link to activate alerts.</p>;
+    return <p className="bookmark-saved"><Icon name="mail" size={14} /> Almost done — check your inbox and click the confirmation link to activate alerts.</p>;
   }
   if (state === "already") {
-    return <p className="bookmark-saved">🔔 You're already subscribed to alerts for this route.</p>;
+    return <p className="bookmark-saved"><Icon name="bell" size={14} /> You're already subscribed to alerts for this route.</p>;
   }
 
   return (
@@ -176,10 +131,12 @@ function BookmarkButton({ selection, currentVisaStatus }) {
   );
 }
 
-export default function ResultCards({ result, selection, onReset }) {
+export default function ResultCards({ result, selection, onReset, meta, onRecheck }) {
   const parsed = parseResult(result);
   const statusConfig = getStatusConfig(parsed["VISA STATUS"]);
   const hasData = SECTION_KEYS.some((k) => parsed[k]);
+  const docItems = parseLines(parsed["REQUIRED DOCUMENTS"]);
+  const banned = statusConfig.type === "banned";
 
   if (!hasData) {
     return (
@@ -197,32 +154,62 @@ export default function ResultCards({ result, selection, onReset }) {
 
       <div className="trip-bar">
         <div className="trip-route">
-          <span className="trip-country">{selection.passport}</span>
-          <span className="trip-sep">✈</span>
-          <span className="trip-country">{selection.destination}</span>
+          <span className="trip-country">{flag(selection.passport)} {selection.passport}</span>
+          <span className="trip-sep"><Icon name="arrowRight" size={14} /></span>
+          <span className="trip-country">{flag(selection.destination)} {selection.destination}</span>
         </div>
         {selection.residence && <span className="trip-residence">Residing in {selection.residence}</span>}
       </div>
+
+      {meta?.ts && (
+        <div className="meta-row">
+          <span className="meta-checked">
+            {meta.fromCache ? `Saved result · checked ${timeAgo(meta.ts)}` : "Checked just now · saved to My checks"}
+          </span>
+          {meta.fromCache && onRecheck && (
+            <button className="btn-ghost" onClick={onRecheck}><Icon name="refresh" size={12} /> Re-check now</button>
+          )}
+        </div>
+      )}
 
       <div className={`verdict-banner verdict-banner--${statusConfig.color}`}>
         <div className="verdict-dot" />
         <div className="verdict-text">
           <span className="verdict-label">{statusConfig.label}</span>
-          {parsed["VISA STATUS"] && <p className="verdict-detail">{strip(parsed["VISA STATUS"])}</p>}
+          {parsed["VISA STATUS"] && <p className="verdict-detail">{stripMd(parsed["VISA STATUS"])}</p>}
         </div>
       </div>
+
+      {meta && meta.verified !== undefined && (
+        meta.verified === statusConfig.label ? (
+          <div className="source-ribbon source-ribbon--verified">
+            <Icon name="shield" size={15} />
+            <span><strong>Verified status</strong> — matches the Passport Index dataset, cross-checked against current official sources.</span>
+          </div>
+        ) : meta.verified ? (
+          <div className="source-ribbon source-ribbon--updated">
+            <Icon name="eye" size={15} />
+            <span><strong>Updated from live sources</strong> — official sources currently differ from the reference dataset (which shows “{meta.verified}”). Confirm with the embassy.</span>
+          </div>
+        ) : (
+          <div className="source-ribbon source-ribbon--ai">
+            <Icon name="alert" size={15} />
+            <span><strong>AI-determined</strong> — this route isn't in the reference dataset, so the status comes from live official sources. Confirm with the embassy before booking.</span>
+          </div>
+        )
+      )}
 
       <div className="info-row">
         {parsed["VISA TYPE"] && (
           <div className="info-block">
             <p className="info-label">Visa type</p>
-            <p className="info-value">{strip(parsed["VISA TYPE"])}</p>
+            <p className="info-value">{stripMd(parsed["VISA TYPE"])}</p>
           </div>
         )}
         {parsed["PROCESSING TIME"] && (
           <div className="info-block">
             <p className="info-label">Processing time</p>
-            <p className="info-value">{strip(parsed["PROCESSING TIME"])}</p>
+            <p className="info-value">{stripMd(parsed["PROCESSING TIME"])}</p>
           </div>
         )}
       </div>
@@ -234,17 +221,28 @@ export default function ResultCards({ result, selection, onReset }) {
         </div>
       )}
 
-      <div className="section-card">
-        <h3 className="section-title">What you'll need</h3>
-        {parsed["REQUIRED DOCUMENTS"]
-          ? <ul className="check-list">{renderLines(parsed["REQUIRED DOCUMENTS"])}</ul>
-          : <p className="section-na">Verify documents with the official embassy website.</p>}
-      </div>
+      {banned || docItems.length === 0 ? (
+        <div className="section-card">
+          <h3 className="section-title">What you'll need</h3>
+          {docItems.length
+            ? <ul className="check-list">{docItems.map((d, i) => <li key={i}>{d}</li>)}</ul>
+            : <p className="section-na">Verify documents with the official embassy website.</p>}
+        </div>
+      ) : (
+        <ReadinessChecklist
+          items={docItems}
+          routeKey={`${selection.passport}|${selection.destination}|${selection.residence || ""}`}
+        />
+      )}
 
-      {parsed["DISCLAIMER"] && <p className="disclaimer">{strip(parsed["DISCLAIMER"])}</p>}
+      {parsed["DISCLAIMER"] && <p className="disclaimer">{stripMd(parsed["DISCLAIMER"])}</p>}
 
       <div className="actions-row">
         <ShareButton selection={selection} statusConfig={statusConfig} parsed={parsed} />
+        <button className="btn-bookmark btn-print" onClick={() => window.print()}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Print
+        </button>
         <BookmarkButton selection={selection} currentVisaStatus={statusConfig.label} />
       </div>
 

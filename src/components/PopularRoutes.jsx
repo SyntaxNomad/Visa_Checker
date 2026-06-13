@@ -1,25 +1,27 @@
-import { COUNTRIES } from "../data/countries";
+import { flag } from "../lib/status";
 
-function flag(name) {
-  const code = COUNTRIES.find((c) => c.name === name)?.code;
-  if (!code) return "🌍";
-  return [...code.toUpperCase()]
-    .map((c) => String.fromCodePoint(0x1f1e6 + c.charCodeAt(0) - 65))
-    .join("");
-}
+const POPULAR = [
+  { passport: "India", destination: "United Arab Emirates" },
+  { passport: "Nigeria", destination: "United Kingdom" },
+  { passport: "Philippines", destination: "Japan" },
+  { passport: "Pakistan", destination: "Canada" },
+  { passport: "Egypt", destination: "Germany" },
+  { passport: "Brazil", destination: "Portugal" },
+];
 
 export default function PopularRoutes({ onCheck, recentRoutes }) {
-  if (!recentRoutes || recentRoutes.length === 0) return null;
+  const hasRecents = recentRoutes && recentRoutes.length > 0;
+  const routes = hasRecents ? recentRoutes : POPULAR;
 
   return (
     <div className="quick-section">
-      <p className="quick-label">Recently checked</p>
+      <p className="quick-label">{hasRecents ? "Recently checked" : "Popular checks"}</p>
       <div className="quick-grid">
-        {recentRoutes.map((r, i) => (
+        {routes.map((r, i) => (
           <button
             key={i}
-            className="quick-card quick-card--recent"
-            onClick={() => onCheck(r.passport, r.residence, r.destination)}
+            className={`quick-card${hasRecents ? " quick-card--recent" : ""}`}
+            onClick={() => onCheck(r.passport, r.residence || "", r.destination)}
           >
             <span className="quick-route">
               {flag(r.passport)} {r.passport} → {flag(r.destination)} {r.destination}

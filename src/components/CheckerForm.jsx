@@ -1,6 +1,8 @@
-import { useState } from "react";
-import { COUNTRIES } from "../data/countries";
+import { useEffect, useState } from "react";
+import CountrySelect from "./CountrySelect";
 import PopularRoutes from "./PopularRoutes";
+import { lookupPassportIndex } from "../lib/dataset";
+import { STATUS_META } from "../lib/status";
 
 const RESIDENCE_STATUSES = [
   "Permanent Resident",
@@ -8,29 +10,42 @@ const RESIDENCE_STATUSES = [
   "Short-term / Tourist Visa",
 ];
 
-export default function CheckerForm({ onCheck, recentRoutes }) {
+export default function CheckerForm({ onCheck, recentRoutes, initialDestination = "" }) {
   const [passport, setPassport] = useState("");
   const [residence, setResidence] = useState("");
   const [residenceStatus, setResidenceStatus] = useState("");
-  const [destination, setDestination] = useState("");
+  const [destination, setDestination] = useState(initialDestination);
+  const [previewState, setPreviewState] = useState(null); // { route, status }
 
   const canSubmit = passport && destination;
+  const route = passport && destination && passport !== destination
+    ? `${passport}|${destination}`
+    : null;
 
-  function handleResidenceChange(e) {
-    setResidence(e.target.value);
-    setResidenceStatus(""); // reset status when country changes
+  // Instant verified answer from the dataset, before any AI call
+  useEffect(() => {
+    if (!route) return;
+    let active = true;
+    lookupPassportIndex(passport, destination).then((status) => {
+      if (active) setPreviewState({ route, status });
+    });
+    return () => { active = false; };
+  }, [route, passport, destination]);
+
+  const preview = route && previewState?.route === route ? previewState.status : null;
+
+  function swap() {
+    setPassport(destination);
+    setDestination(passport);
   }
 
   function handleSubmit(e) {
     e.preventDefault();
     if (!canSubmit) return;
-    const passportName = COUNTRIES.find((c) => c.code === passport)?.name || passport;
-    const residenceName = residence
-      ? COUNTRIES.find((c) => c.code === residence)?.name || residence
-      : "";
-    const destinationName = COUNTRIES.find((c) => c.code === destination)?.name || destination;
-    onCheck(passportName, residenceName, destinationName, residenceStatus);
+    onCheck(passport, residence, destination, residenceStatus);
   }
+
+  const previewMeta = preview ? STATUS_META[preview] : null;
 
   return (
     <div className="form-container">
@@ -41,21 +56,39 @@ export default function CheckerForm({ onCheck, recentRoutes }) {
 
           <div className="field">
             <label className="label" htmlFor="passport">I have a passport from</label>
-            <select id="passport" className="select" value={passport} onChange={(e) => setPassport(e.target.value)}>
-              <option value="">Select country...</option>
-              {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
-            </select>
+            <CountrySelect id="passport" value={passport} onChange={setPassport} placeholder="Type to search…" />
+          </div>
+
+          <div className="swap-row">
+            <button
+              type="button"
+              className="swap-btn"
+              onClick={swap}
+              disabled={!passport && !destination}
+              aria-label="Swap passport and destination"
+              title="Swap passport and destination"
+            >
+              ⇅
+            </button>
+          </div>
+
+          <div className="field">
+            <label className="label" htmlFor="destination">I want to travel to</label>
+            <CountrySelect id="destination" value={destination} onChange={setDestination} placeholder="Type to search…" />
           </div>
 
           <div className="field">
             <div className="label-row">
               <label className="label" htmlFor="residence">I currently live in</label>
-              <span className="label-optional">optional</span>
+              <span className="label-optional">optional — can unlock easier visas</span>
             </div>
-            <select id="residence" className="select" value={residence} onChange={handleResidenceChange}>
-              <option value="">Skip / not specified</option>
-              {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
-            </select>
+            <CountrySelect
+              id="residence"
+              value={residence}
+              onChange={(v) => { setResidence(v); setResidenceStatus(""); }}
+              placeholder="Skip / not specified"
+              clearable
+            />
           </div>
 
           {residence && (
@@ -75,16 +108,18 @@ export default function CheckerForm({ onCheck, recentRoutes }) {
             </div>
           )}
 
-          <div className="field">
-            <label className="label" htmlFor="destination">I want to travel to</label>
-            <select id="destination" className="select" value={destination} onChange={(e) => setDestination(e.target.value)}>
-              <option value="">Select country...</option>
-              {COUNTRIES.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
-            </select>
-          </div>
+          {previewMeta && (
+            <div className={`preview-chip preview-chip--${previewMeta.color}`}>
+              <span className={`preview-dot dest-dot--${previewMeta.color}`} />
+              <span>
+                <strong>{preview}</strong> — verified dataset answer.
+                Get documents, fees &amp; where to apply below.
+              </span>
+            </div>
+          )}
 
           <button type="submit" className="btn-primary" disabled={!canSubmit}>
-            Check Visa Requirements
+            {previewMeta ? "Get the full requirements" : "Check Visa Requirements"}
           </button>
         </form>
       </div>
